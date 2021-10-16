@@ -39,3 +39,15 @@ jobs:
         run: |
           ls -l $GITHUB_WORKSPACE/*
           echo "FOO=${{ env.FOO }}"
+      
+      - name: Push to olmi-test-repo-two repo
+        run: |
+          pwd
+          cd $GITHUB_WORKSPACE/olmi-test-repo-two
+          echo ${{ env.FOO }} > ./domain-name-1.txt
+          git add .
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git commit -am "File Replicated from olmi-test-repo-one"
+          git push
+          
