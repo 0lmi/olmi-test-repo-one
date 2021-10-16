@@ -61,10 +61,6 @@ jobs:
       
       - name: Push to olmi-test-repo-two repo
         run: |
-          ls -la ${HOME}
-          
-          mkdir ${HOME}/.ssh
-          chmod 700 ${HOME}/.ssh
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
           
           ls -la ${HOME}/.ssh
