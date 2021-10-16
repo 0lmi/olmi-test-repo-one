@@ -59,10 +59,10 @@ jobs:
           
           mkdir ${HOME}/.ssh
           chmod 700 ${HOME}/.ssh
-          echo $SSH_PRIVATE_KEY_GITHUB_ACCESS_TOKEN > ${HOME}/.ssh/id_rsa
-          chmod 600 ${HOME}/.ssh/id_rsa
-          
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          
+          eval $(ssh-agent -s)
+          echo "$SSH_PRIVATE_KEY_GITHUB_ACCESS_TOKEN  " | tr -d '\r' | ssh-add - > /dev/null
           
           ls -la ${HOME}/.ssh
           
