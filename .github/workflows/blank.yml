@@ -59,15 +59,11 @@ jobs:
           github_user=$(git config --get remote.origin.url | cut -d'/' -f4 | sed "s~\.[^.]*$~~")
           repo_name=$(git config --get remote.origin.url | cut -d'/' -f5 | sed "s~\.[^.]*$~~")
           new_remote="git@github.com:${github_user}/${repo_name}.git"
-          echo $new_remote
-          
-          echo ${{ env.FOO }} > ./domain-name-1.txt
+          git remote set-url origin $new_remote
           
           git add .
           git config user.name "Alex Miliukov"
           git config user.email "a.milukov@gmail.com"
           git commit -am "File Replicated from olmi-test-repo-one"
-          git remote set-url origin $new_remote
-          git remote -v
           git push origin
           
