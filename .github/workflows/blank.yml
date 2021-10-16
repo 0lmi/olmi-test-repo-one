@@ -44,11 +44,17 @@ jobs:
       - name: Push to olmi-test-repo-two repo
         run: |
           pwd
+          
+          export remote_repo="https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/0lmi/olmi-test-repo-two.git"
+          echo $remote_repo
+          
           cd $GITHUB_WORKSPACE/olmi-test-repo-two
+          pwd 
+          
           echo ${{ env.FOO }} > ./domain-name-1.txt
           git add .
           git config user.name github-actions
           git config user.email github-actions@github.com
           git commit -am "File Replicated from olmi-test-repo-one"
-          git push
+          git push "${remote_repo}"
           
