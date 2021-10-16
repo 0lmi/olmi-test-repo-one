@@ -29,7 +29,6 @@ jobs:
         uses: actions/checkout@master
         with:
           repository: 0lmi/olmi-test-repo-two
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
           path: olmi-test-repo-two
 
       - name: Export env var
@@ -58,7 +57,8 @@ jobs:
         run: |
           ls -la ${HOME}
           
-          mkdir ${HOME}/.ssh && chmod 700
+          mkdir ${HOME}/.ssh
+          chmod 700 ${HOME}/.ssh
           echo $SSH_PRIVATE_KEY_GITHUB_ACCESS_TOKEN > ${HOME}/.ssh/id_rsa
           chmod 600 ${HOME}/.ssh/id_rsa
           
