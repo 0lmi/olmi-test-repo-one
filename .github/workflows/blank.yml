@@ -61,9 +61,11 @@ jobs:
           new_remote="git@github.com:${github_user}/${repo_name}.git"
           git remote set-url origin $new_remote
           
-          git add .
-          git config user.name "Alex Miliukov"
-          git config user.email "a.milukov@gmail.com"
-          git commit -am "File Replicated from olmi-test-repo-one"
-          git push origin
+          if [ $(git diff-index --name-only --diff-filter=d HEAD | wc -l) -gt 0 ]; then
+            git add .
+            git config user.name "Alex Miliukov"
+            git config user.email "a.milukov@gmail.com"
+            git commit -am "File Replicated from olmi-test-repo-one"
+            git push origin
+          fi
           
