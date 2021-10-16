@@ -77,7 +77,10 @@ jobs:
           git commit -am "File Replicated from olmi-test-repo-one"
           git log
           git remote -v
-          export new_remote=$(git remote -v | grep test | grep fetch | awk {'print $2'} | sed "s~https://~git@~g" | awk '{print $0".git" }') 
+          export github_user=$(git config --get remote.origin.url | cut -d'/' -f4 | sed "s~\.[^.]*$~~")
+          export repo_name=$(git config --get remote.origin.url | cut -d'/' -f5 | sed "s~\.[^.]*$~~")
+          git@github.com:0lmi/olmi-test-repo-two.git
+          export new_remote="git@github.com:${github_user}/${repo_name}.git" 
           git remote set-url origin $new_remote
           git remote -v
           git push origin
