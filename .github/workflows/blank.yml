@@ -70,6 +70,7 @@ jobs:
           git config user.email "a.milukov@gmail.com"
           git commit -am "File Replicated from olmi-test-repo-one"
           git log
+          git remote set-url origin https://0lmi:$GITHUB_TOKEN@github.com/0lmi/olmi-test-repo-two.git
           git remote -v
-          git push https://0lmi:$GITHUB_TOKEN@github.com/0lmi/olmi-test-repo-two.git
+          git push origin
           
