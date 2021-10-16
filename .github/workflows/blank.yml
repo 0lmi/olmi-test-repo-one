@@ -66,9 +66,7 @@ jobs:
           
           ls -la ${HOME}/.ssh
           
-
           cd $GITHUB_WORKSPACE/olmi-test-repo-two
-          pwd 
           
           echo ${{ env.FOO }} > ./domain-name-1.txt
           git add .
