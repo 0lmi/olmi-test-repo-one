@@ -62,24 +62,19 @@ jobs:
       - name: Push to olmi-test-repo-two repo
         run: |
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-          ssh-add -L
           
-          chmod 700 ${HOME}/.ssh
-          ls -la ${HOME}/.ssh
+          github_user=$(git config --get remote.origin.url | cut -d'/' -f4 | sed "s~\.[^.]*$~~")
+          repo_name=$(git config --get remote.origin.url | cut -d'/' -f5 | sed "s~\.[^.]*$~~")
+          new_remote="git@github.com:${github_user}/${repo_name}.git"
+          echo $new_remote
           
           cd $GITHUB_WORKSPACE/olmi-test-repo-two
-          
           echo ${{ env.FOO }} > ./domain-name-1.txt
+          
           git add .
           git config user.name "Alex Miliukov"
           git config user.email "a.milukov@gmail.com"
           git commit -am "File Replicated from olmi-test-repo-one"
-          git log
-          git remote -v
-          export github_user=$(git config --get remote.origin.url | cut -d'/' -f4 | sed "s~\.[^.]*$~~")
-          export repo_name=$(git config --get remote.origin.url | cut -d'/' -f5 | sed "s~\.[^.]*$~~")
-
-          export new_remote="git@github.com:${github_user}/${repo_name}.git" 
           git remote set-url origin $new_remote
           git remote -v
           git push origin
