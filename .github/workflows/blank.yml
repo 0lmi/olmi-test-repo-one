@@ -46,28 +46,28 @@ jobs:
           cd $GITHUB_WORKSPACE/olmi-test-repo-two
           echo "FOO=${{ env.FOO }}" > file_1
 
-      - name: GitHub Push
-        uses: Smart-Transportation/push@v1.3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          repository: 0lmi/olmi-test-repo-two
-          directory: olmi-test-repo-two
-          branch: main
+#       - name: GitHub Push
+#         uses: Smart-Transportation/push@v1.3
+#         with:
+#           github_token: ${{ secrets.GITHUB_TOKEN }}
+#           repository: 0lmi/olmi-test-repo-two
+#           directory: olmi-test-repo-two
+#           branch: main
       
-#       - name: Push to olmi-test-repo-two repo
-#         run: |
-#           pwd
+      - name: Push to olmi-test-repo-two repo
+        run: |
+          pwd
           
-#           export remote_repo="https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/0lmi/olmi-test-repo-two.git"
-#           echo $remote_repo
+          export remote_repo="https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/0lmi/olmi-test-repo-two.git"
+          echo $remote_repo
           
-#           cd $GITHUB_WORKSPACE/olmi-test-repo-two
-#           pwd 
+          cd $GITHUB_WORKSPACE/olmi-test-repo-two
+          pwd 
           
-#           echo ${{ env.FOO }} > ./domain-name-1.txt
-#           git add .
-#           git config user.name github-actions
-#           git config user.email github-actions@github.com
-#           git commit -am "File Replicated from olmi-test-repo-one"
-#           git push "${remote_repo}"
+          echo ${{ env.FOO }} > ./domain-name-1.txt
+          git add .
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git commit -am "File Replicated from olmi-test-repo-one"
+          git push https://0lmi:$GITHUB_TOKEN@github.com/0lmi/olmi-test-repo-two.git
           
