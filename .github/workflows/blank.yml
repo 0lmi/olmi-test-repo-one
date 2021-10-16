@@ -66,8 +66,9 @@ jobs:
           
           echo ${{ env.FOO }} > ./domain-name-1.txt
           git add .
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config user.name "Alex Miliukov"
+          git config user.email "a.milukov@gmail.com"
           git commit -am "File Replicated from olmi-test-repo-one"
+          git log
           git push https://0lmi:$GITHUB_TOKEN@github.com/0lmi/olmi-test-repo-two.git
           
