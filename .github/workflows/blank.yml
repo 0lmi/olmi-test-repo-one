@@ -51,7 +51,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           repository: 0lmi/olmi-test-repo-two
-          directory: $GITHUB_WORKSPACE/olmi-test-repo-two
+          directory: olmi-test-repo-two
           branch: main
       
 #       - name: Push to olmi-test-repo-two repo
