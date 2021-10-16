@@ -44,14 +44,6 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/olmi-test-repo-two
           echo "FOO=${{ env.FOO }}" > file_1
-
-#       - name: GitHub Push
-#         uses: Smart-Transportation/push@v1.3
-#         with:
-#           github_token: ${{ secrets.GITHUB_TOKEN }}
-#           repository: 0lmi/olmi-test-repo-two
-#           directory: olmi-test-repo-two
-#           branch: main
       
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.5.3
@@ -63,12 +55,12 @@ jobs:
         run: |
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
           
+          cd $GITHUB_WORKSPACE/olmi-test-repo-two
           github_user=$(git config --get remote.origin.url | cut -d'/' -f4 | sed "s~\.[^.]*$~~")
           repo_name=$(git config --get remote.origin.url | cut -d'/' -f5 | sed "s~\.[^.]*$~~")
           new_remote="git@github.com:${github_user}/${repo_name}.git"
           echo $new_remote
           
-          cd $GITHUB_WORKSPACE/olmi-test-repo-two
           echo ${{ env.FOO }} > ./domain-name-1.txt
           
           git add .
