@@ -53,6 +53,12 @@ jobs:
 #           directory: olmi-test-repo-two
 #           branch: main
       
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          # Private SSH key to register in the SSH agent
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_GITHUB_ACCESS_TOKEN }}
+      
       - name: Push to olmi-test-repo-two repo
         run: |
           ls -la ${HOME}
@@ -60,9 +66,6 @@ jobs:
           mkdir ${HOME}/.ssh
           chmod 700 ${HOME}/.ssh
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-          
-          eval $(ssh-agent -s)
-          echo "$SSH_PRIVATE_KEY_GITHUB_ACCESS_TOKEN  " | tr -d '\r' | ssh-add - > /dev/null
           
           ls -la ${HOME}/.ssh
           
