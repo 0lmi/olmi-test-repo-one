@@ -28,8 +28,7 @@ jobs:
       - name: Checount second repo
         uses: actions/checkout@v2.3.5
         with:
-          repository: 0lmi/olmi-test-repo-two
-          path: $GITHUB_WORKSPACE/olmi-test-repo-two
+          name: 0lmi/olmi-test-repo-two
 
       # Runs a single command using the runners shell
       - name: Run a one-line script
