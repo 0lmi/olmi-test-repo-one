@@ -31,15 +31,12 @@ jobs:
           repository: 0lmi/olmi-test-repo-two
           path: olmi-test-repo-two
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Export env var
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
-      
+          export FOO=bar
+          echo "::set-env name=FOO::$FOO"
+
       - name: Check what is in the workspace
-        run: ls -l $GITHUB_WORKSPACE/*
+        run: |
+          ls -l $GITHUB_WORKSPACE/*
+          echo $FOO
