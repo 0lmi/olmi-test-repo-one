@@ -79,7 +79,7 @@ jobs:
           git remote -v
           export github_user=$(git config --get remote.origin.url | cut -d'/' -f4 | sed "s~\.[^.]*$~~")
           export repo_name=$(git config --get remote.origin.url | cut -d'/' -f5 | sed "s~\.[^.]*$~~")
-          git@github.com:0lmi/olmi-test-repo-two.git
+
           export new_remote="git@github.com:${github_user}/${repo_name}.git" 
           git remote set-url origin $new_remote
           git remote -v
