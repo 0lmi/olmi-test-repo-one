@@ -56,11 +56,12 @@ jobs:
       
       - name: Push to olmi-test-repo-two repo
         run: |
-          pwd
+          ls -l ${HOME}
+          ls -l ${HOME}/.ssh
           
-          export remote_repo="https://${GITHUB_ACTOR}:${INPUT_GITHUB_TOKEN}@github.com/0lmi/olmi-test-repo-two.git"
-          echo $remote_repo
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
           
+
           cd $GITHUB_WORKSPACE/olmi-test-repo-two
           pwd 
           
@@ -71,7 +72,8 @@ jobs:
           git commit -am "File Replicated from olmi-test-repo-one"
           git log
           git remote -v
-          git remote set-url origin https://${{ env.GITHUB_TOKEN }}@github.com/0lmi/olmi-test-repo-two.git
+          export new_remote=$(git remote -v | grep origin | head -n1 | awk {'print $2'} | sed "s~https://~git@~g")
+          git remote set-url origin $new_remote
           git remote -v
           git push origin
           
