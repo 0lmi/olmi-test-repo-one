@@ -33,8 +33,7 @@ jobs:
 
       - name: Export env var
         run: |
-          export FOO=bar
-          echo "::set-env name=FOO::$FOO"
+          echo "FOO=bar" >> $GITHUB_ENV
 
       - name: Check what is in the workspace
         run: |
