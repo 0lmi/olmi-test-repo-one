@@ -64,6 +64,7 @@ jobs:
           ssh-keyscan -H github.com >> ~/.ssh/known_hosts
           ssh-add -L
           
+          chmod 700 ${HOME}/.ssh
           ls -la ${HOME}/.ssh
           
           cd $GITHUB_WORKSPACE/olmi-test-repo-two
