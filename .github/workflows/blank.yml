@@ -29,6 +29,7 @@ jobs:
         uses: actions/checkout@master
         with:
           repository: 0lmi/olmi-test-repo-two
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
           path: olmi-test-repo-two
 
       - name: Export env var
