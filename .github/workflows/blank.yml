@@ -38,4 +38,4 @@ jobs:
       - name: Check what is in the workspace
         run: |
           ls -l $GITHUB_WORKSPACE/*
-          echo $FOO
+          echo "FOO=${{ env.FOO }}"
