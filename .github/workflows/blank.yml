@@ -29,6 +29,7 @@ jobs:
         uses: actions/checkout@master
         with:
           repository: 0lmi/olmi-test-repo-two
+          path: olmi-test-repo-two
 
       # Runs a single command using the runners shell
       - name: Run a one-line script
