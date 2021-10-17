@@ -42,7 +42,7 @@ jobs:
             pr_num=$(echo $GITHUB_REF | cut -d'/' -f3)
             echo PR${pr_num} created
           fi
-          if [[ "$GITHUB_REF" =~ ^.*/pull/.*$ ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "push" && $(git log --format=%B -n 1 $GITHUB_SHA | head -n1) =~ ^Merge* ]]; then
             pr_num=$(git log --format=%B -n 1 $GITHUB_SHA | head -n1 | cut -d'#' -f2 | cut -d' ' -f1)
             echo PR${pr_num} merged
           fi
