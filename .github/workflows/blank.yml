@@ -36,6 +36,8 @@ jobs:
           
       - name: Get PR num on merge/create_pr events
         run: |
+          git log | head -n20
+          echo ---
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             pr_num=$(echo $GITHUB_REF | cut -d'/' -f3)
             echo PR${pr_num} created
