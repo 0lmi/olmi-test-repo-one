@@ -28,8 +28,11 @@ jobs:
       - name: Print env vars
         run: |
           env
-          echo ---
-          cat $GITHUB_EVENT_PATH
+
+      - name: Print commit message
+        run: |
+          commit_msg=$(git log --format=%B -n 1 $GITHUB_SHA | head -n1)
+          echo $commit_msg
       
       - name: Checount second repo
         uses: actions/checkout@master
