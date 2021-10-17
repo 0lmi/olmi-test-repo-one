@@ -68,4 +68,7 @@ jobs:
             git commit -am "File Replicated from olmi-test-repo-one"
             git push origin
           fi
+
+      - name: Print env vars
+        run: env
           
