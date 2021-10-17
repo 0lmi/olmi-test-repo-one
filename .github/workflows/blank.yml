@@ -33,6 +33,17 @@ jobs:
         run: |
           commit_msg=$(git log --format=%B -n 1 $GITHUB_SHA | head -n1)
           echo $commit_msg
+          
+      - name: Get PR num on merge/create_pr events
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            pr_num=$(echo $GITHUB_REF | cut -d'/' -f3)
+            echo PR${pr_num} created
+          fi
+          if [[ "$GITHUB_REF" =~ ^.*/pull/.*$ ]]; then
+            pr_num=$(git log --format=%B -n 1 $GITHUB_SHA | head -n1 | cut -d'#' -f2 | cut -d' ' -f1)
+            echo PR${pr_num} merged
+          fi
       
       - name: Checount second repo
         uses: actions/checkout@master
