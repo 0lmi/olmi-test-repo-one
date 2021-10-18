@@ -91,3 +91,7 @@ jobs:
             git push origin
           fi
           
+      - name: Push to olmi-test-repo-two repo
+        run: |
+          git config user.name
+          git config user.email
