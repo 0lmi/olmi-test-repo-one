@@ -25,73 +25,18 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       
-      - name: Print env vars
+      - name: Create dummy payload
         run: |
-          env
+          echo "dummy" > $GITHUB_WORKSPACE/payload
+          ls -alh $GITHUB_WORKSPACE
+          echo $GITHUB_WORKSPACE
+
+      - name: Get the output time
+        run: |
+          ls -l
 
       - name: Print commit message
         run: |
           commit_msg=$(git log --format=%B -n 1 $GITHUB_SHA | head -n1)
           echo $commit_msg
           
-      - name: Get PR num on merge/create_pr events
-        run: |
-          git log | head -n20
-          echo ---
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            pr_num=$(echo $GITHUB_REF | cut -d'/' -f3)
-            echo PR${pr_num} created
-          fi
-          if [[ "$GITHUB_EVENT_NAME" == "push" && $(git log --format=%B -n 1 $GITHUB_SHA | head -n1) =~ ^Merge* ]]; then
-            pr_num=$(git log --format=%B -n 1 $GITHUB_SHA | head -n1 | cut -d'#' -f2 | cut -d' ' -f1)
-            echo PR${pr_num} merged
-          fi
-      
-      - name: Checount second repo
-        uses: actions/checkout@master
-        with:
-          repository: 0lmi/olmi-test-repo-two
-          path: olmi-test-repo-two
-
-      - name: Export env var
-        run: |
-          echo "FOO=bar" >> $GITHUB_ENV
-
-      - name: Check what is in the workspace
-        run: |
-          ls -l $GITHUB_WORKSPACE/*
-          echo "FOO=${{ env.FOO }}"
-
-      - name: Create a file
-        run: |
-          cd $GITHUB_WORKSPACE/olmi-test-repo-two
-          echo "FOO=${{ env.FOO }}" > file_1
-      
-      - name: Setup SSH agent
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          # Private SSH key to register in the SSH agent
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_GITHUB_ACCESS_TOKEN }}
-      
-      - name: Push to olmi-test-repo-two repo
-        run: |
-          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-          
-          cd $GITHUB_WORKSPACE/olmi-test-repo-two
-          github_user=$(git config --get remote.origin.url | cut -d'/' -f4 | sed "s~\.[^.]*$~~")
-          repo_name=$(git config --get remote.origin.url | cut -d'/' -f5 | sed "s~\.[^.]*$~~")
-          new_remote="git@github.com:${github_user}/${repo_name}.git"
-          git remote set-url origin $new_remote
-          
-          if [ $(git diff-index --name-only --diff-filter=d HEAD | wc -l) -gt 0 ]; then
-            git add .
-            git config user.name "Alex Miliukov"
-            git config user.email "a.milukov@gmail.com"
-            git commit -am "File Replicated from olmi-test-repo-one"
-            git push origin
-          fi
-          
-      - name: Push to olmi-test-repo-two repo
-        run: |
-          git config user.name
-          git config user.email
