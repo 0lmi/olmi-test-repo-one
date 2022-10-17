@@ -42,8 +42,7 @@ jobs:
       - name: Check prerequisites
         run: |
           if [[ -z "${MENDER_SERVER_URL}" || "${MENDER_SERVER_URL}" == "" ]]; then
-            echo "ERROR: missing MENDER_SERVER_URL"
-            exit 1
+            echo "WARN: MENDER_SERVER_URL, using default: https://hosted.mender.io"
           fi
           if [[ -z "${MENDER_SERVER_ACCESS_TOKEN}" || "${MENDER_SERVER_ACCESS_TOKEN}" == "" ]]; then
             if [[ -z "${MENDER_SERVER_USER}" || "${MENDER_SERVER_USER}" == "" ]]; then
