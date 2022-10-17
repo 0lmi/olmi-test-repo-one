@@ -18,6 +18,7 @@ jobs:
       - name: Create Mender Artifact
         run: |
           env
+          mkdir mender-artifacts
           echo /home/root/.ssh > dest_dir
           echo authorized_keys > filename
           echo key > authorized_keys
