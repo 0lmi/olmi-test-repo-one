@@ -31,6 +31,8 @@ jobs:
   publish:
     needs: ["build"]
     runs-on: ubuntu-latest
+    container:
+      image: mendersoftware/mender-ci-tools:men-5906_build_and_publish_mender-ci-tools_image_e018e952a4e9a71c318bf2a56651293efff5d8b5
     steps:
       - name: Download Mender Artifact
         uses: actions/download-artifact@v3
@@ -38,8 +40,37 @@ jobs:
           name: artifact
           path: artifact.mender
       - name: Upload Mender Artifact
-        uses: TheYoctoJester/mender-push-artifact@main
+        env:
+          MENDER_SERVER_URL: https://hosted.mender.io
+        run: |
+          mender-cli artifacts upload --no-progress --server ${MENDER_SERVER_URL} --token-value ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }} artifact.mender
+
+
+  deploy:
+    needs: ["publish"]
+    runs-on: ubuntu-latest
+    container:
+      image: mendersoftware/mender-ci-tools:men-5906_build_and_publish_mender-ci-tools_image_e018e952a4e9a71c318bf2a56651293efff5d8b5
+    steps:
+      - name: Download Mender Artifact
+        uses: actions/download-artifact@v3
         with:
-          mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
-          mender_artifact: artifact.mender
-          mender_uri: https://hosted.mender.io
+          name: artifact
+          path: artifact.mender
+      - name: Get Artifact Name
+        env:
+          MENDER_ARTIFACT_NAME: artifact.mender
+        run: |
+          ARTIFACT_NAME=$(mender-artifact read --no-progress ${MENDER_ARTIFACT_NAME} | grep "Name:" | awk {'print $2'})
+          echo "ARTIFACT_NAME=$ARTIFACT_NAME" | tee -a $GITHUB_ENV
+      - name: Generate Deployment Name
+        run: |
+          DEPLOYMENT_NAME=${ARTIFACT_NAME}_${CI_COMMIT_SHORT_SHA}
+          echo "DEPLOYMENT_NAME=$DEPLOYMENT_NAME" | tee -a $GITHUB_ENV
+      - name: Get Group's Devices List
+        env:
+          MENDER_DEPLOYMENT_NAME: grp-1
+          MENDER_SERVER_URL: https://hosted.mender.io
+        run: |
+          MENDER_DEVICES_LIST=$(curl -s -H "Authorization: Bearer ${{ secrets.mender_pat }}" ${MENDER_SERVER_URL}/api/management/v1/inventory/groups/${MENDER_DEPLOYMENT_NAME}/devices)
+          echo "MENDER_DEVICES_LIST=$MENDER_DEVICES_LIST" | tee -a $GITHUB_ENV
