@@ -39,6 +39,9 @@ jobs:
         with:
           name: mender-artifacts
           path: mender-artifacts/
+      - name: Setup Environment
+        run: |
+          env
       - name: Check prerequisites
         run: |
           if [[ -z "${MENDER_SERVER_URL}" || "${MENDER_SERVER_URL}" == "" ]]; then
@@ -54,9 +57,6 @@ jobs:
               exit 1
             fi
           fi
-      - name: Setup Environment
-        run: |
-          env
       - name: Upload Mender Artifact
         uses: TheYoctoJester/mender-push-artifact@main
         with:
