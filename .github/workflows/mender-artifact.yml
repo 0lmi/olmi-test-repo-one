@@ -58,7 +58,7 @@ jobs:
         run: |
           env
       - name: Upload Mender Artifact
-        uses: TheYoctoJester/mender-push-artifact
+        uses: TheYoctoJester/mender-push-artifact@main
         with:
           mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
           mender_artifact: mender_artifacts/artifact.mender
