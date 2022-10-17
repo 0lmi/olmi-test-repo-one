@@ -3,15 +3,14 @@ name: Build and Deploy Mender Artifacts
 on:
   push:
     branches: [ main ]
-  pull_request:
-    types:
-      - closed
   workflow_dispatch:
 
 
 jobs:
   build:
-    runs-on: mendersoftware/mender-ci-tools:men-5906_build_and_publish_mender-ci-tools_image_e018e952a4e9a71c318bf2a56651293efff5d8b5
+    runs-on: ubuntu-latest
+    container:
+      image: mendersoftware/mender-ci-tools:men-5906_build_and_publish_mender-ci-tools_image_e018e952a4e9a71c318bf2a56651293efff5d8b5
 
     steps:
       - uses: actions/checkout@v2
