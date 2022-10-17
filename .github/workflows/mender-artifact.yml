@@ -11,21 +11,56 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mendersoftware/mender-ci-tools:men-5906_build_and_publish_mender-ci-tools_image_e018e952a4e9a71c318bf2a56651293efff5d8b5
-
     steps:
-      - uses: actions/checkout@v2
-      
+      - uses: actions/checkout@v2      
       - name: Create Mender Artifact
         run: |
-          env
+          set -x
           mkdir mender-artifacts
           echo /home/root/.ssh > dest_dir
           echo authorized_keys > filename
           echo key > authorized_keys
           mender-artifact write module-image -T single-file --device-type raspberrypi4 -o mender-artifacts/artifact.mender -n updated-authorized_keys-1.0 --software-name authorized_keys --software-version 1.0 -f dest_dir -f filename -f authorized_keys
-
       - name: Upload Mender Artifact
         uses: actions/upload-artifact@v3
         with:
           name: mender-artifacts
           path: mender-artifacts/
+
+
+  publish:
+    runs-on: ubuntu-latest
+    container:
+      image: mendersoftware/mender-ci-tools:men-5906_build_and_publish_mender-ci-tools_image_e018e952a4e9a71c318bf2a56651293efff5d8b5
+    steps:
+      - name: Download Mender Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: mender-artifacts
+          path: mender-artifacts/
+      - name: Check prerequisites
+        run: |
+          if [[ -z "${MENDER_SERVER_URL}" || "${MENDER_SERVER_URL}" == "" ]]; then
+            echo "ERROR: missing MENDER_SERVER_URL"
+            exit 1
+          fi
+          if [[ -z "${MENDER_SERVER_ACCESS_TOKEN}" || "${MENDER_SERVER_ACCESS_TOKEN}" == "" ]]; then
+            if [[ -z "${MENDER_SERVER_USER}" || "${MENDER_SERVER_USER}" == "" ]]; then
+              echo "ERROR: one of MENDER_SERVER_ACCESS_TOKEN or MENDER_SERVER_USER is required, but both are empty"
+              exit 1
+            fi
+            if [[ -z "${MENDER_SERVER_PASSWORD}" || "${MENDER_SERVER_PASSWORD}" == "" ]]; then
+              echo "ERROR: missing MENDER_SERVER_PASSWORD"
+              exit 1
+            fi
+          fi
+      - name: Setup Environment
+        run: |
+          env
+      - name: Upload Mender Artifact
+        uses: TheYoctoJester/mender-push-artifact
+        with:
+          mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
+          mender_artifact: mender_artifacts/artifact.mender
+          mender_uri: https://hosted.mender.io
+
