@@ -29,6 +29,7 @@ jobs:
 
 
   publish:
+    needs: ["build"]
     runs-on: ubuntu-latest
     container:
       image: mendersoftware/mender-ci-tools:men-5906_build_and_publish_mender-ci-tools_image_e018e952a4e9a71c318bf2a56651293efff5d8b5
