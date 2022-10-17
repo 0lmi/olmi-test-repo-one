@@ -15,7 +15,6 @@ jobs:
       - uses: actions/checkout@v2      
       - name: Create Mender Artifact
         run: |
-          set -x
           mkdir mender-artifacts
           echo /home/root/.ssh > dest_dir
           echo authorized_keys > filename
@@ -38,12 +37,17 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: artifact
-          path: artifact.mender
-      - name: Upload Mender Artifact
+      - name: Upload Artifact to Mender Server
         env:
+          MENDER_ARTIFACT_NAME: artifact.mender
           MENDER_SERVER_URL: https://hosted.mender.io
         run: |
-          mender-cli artifacts upload --no-progress --server ${MENDER_SERVER_URL} --token-value ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }} artifact.mender
+          artifact_name=$(mender-artifact read --no-progress ${MENDER_ARTIFACT_NAME} | grep "Name:" | awk {'print $2'})
+          if [ $(mender-cli artifacts list --server ${MENDER_SERVER_URL} --token-value ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }} | grep -c ${artifact_name}) -gt 0 ]; then
+            echo "WARN: artifact ${MENDER_SERVER_URL} with name ${artifact_name} already exists on the server, upload is skipped"
+            exit 0
+          fi
+          mender-cli artifacts upload --no-progress --server ${MENDER_SERVER_URL} --token-value ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }} ${MENDER_ARTIFACT_NAME}
 
 
   deploy:
@@ -56,7 +60,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: artifact
-          path: artifact.mender
       - name: Get Artifact Name
         env:
           MENDER_ARTIFACT_NAME: artifact.mender
@@ -65,6 +68,7 @@ jobs:
           echo "ARTIFACT_NAME=$ARTIFACT_NAME" | tee -a $GITHUB_ENV
       - name: Generate Deployment Name
         run: |
+          CI_COMMIT_SHORT_SHA="${GITHUB_SHA:0:8}"
           DEPLOYMENT_NAME=${ARTIFACT_NAME}_${CI_COMMIT_SHORT_SHA}
           echo "DEPLOYMENT_NAME=$DEPLOYMENT_NAME" | tee -a $GITHUB_ENV
       - name: Get Group's Devices List
@@ -72,5 +76,14 @@ jobs:
           MENDER_DEPLOYMENT_NAME: grp-1
           MENDER_SERVER_URL: https://hosted.mender.io
         run: |
-          MENDER_DEVICES_LIST=$(curl -s -H "Authorization: Bearer ${{ secrets.mender_pat }}" ${MENDER_SERVER_URL}/api/management/v1/inventory/groups/${MENDER_DEPLOYMENT_NAME}/devices)
+          MENDER_DEVICES_LIST=$(curl -s -H "Authorization: Bearer ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}" ${MENDER_SERVER_URL}/api/management/v1/inventory/groups/${MENDER_DEPLOYMENT_NAME}/devices)
           echo "MENDER_DEVICES_LIST=$MENDER_DEVICES_LIST" | tee -a $GITHUB_ENV
+      - name: Create Deployment
+        env:
+          MENDER_SERVER_URL: https://hosted.mender.io
+        run: |
+          curl -X POST ${MENDER_SERVER_URL}/api/management/v1/deployments/deployments \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            -H "Authorization: Bearer ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}" \
+            --data-raw "{\"name\": \"${DEPLOYMENT_NAME}\", \"artifact_name\": \"${ARTIFACT_NAME}\", \"devices\": ${MENDER_DEVICES_LIST}}"
