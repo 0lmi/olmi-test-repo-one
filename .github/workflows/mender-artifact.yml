@@ -20,7 +20,8 @@ jobs:
           echo /home/root/.ssh > dest_dir
           echo authorized_keys > filename
           echo key > authorized_keys
-          mender-artifact write module-image -T single-file \
+          mender-artifact write module-image \
+            -T single-file \
             --device-type raspberrypi4 \
             -o ${MENDER_ARTIFACT_NAME} \
             -n updated-authorized_keys-1.0 \
@@ -48,7 +49,7 @@ jobs:
           name: artifact
       - name: Get Auth Token
         env:
-          MENDER_SERVER_URL: https://hosted.mender.ioMENDE
+          MENDER_SERVER_URL: https://hosted.mender.io
         run: |
           if [ ! -z secrets.MENDER_SERVER_ACCESS_TOKEN ]; then
             MENDER_SERVER_ACCESS_TOKEN=${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
@@ -64,12 +65,13 @@ jobs:
           MENDER_ARTIFACT_NAME: artifact.mender
           MENDER_SERVER_URL: https://hosted.mender.io
         run: |
-          artifact_name=$(mender-artifact read --no-progress ${MENDER_ARTIFACT_NAME} | grep "Name:" | awk {'print $2'})
-          if [ $(mender-cli artifacts list --server ${MENDER_SERVER_URL} --token-value ${MENDER_SERVER_ACCESS_TOKEN} | grep -c ${artifact_name}) -gt 0 ]; then
-            echo "WARN: artifact ${MENDER_SERVER_URL} with name ${artifact_name} already exists on the server, upload is skipped"
+          RELEASE_NAME=$(mender-artifact read --no-progress ${MENDER_ARTIFACT_NAME} | grep "Name:" | awk {'print $2'})
+          if [ $(mender-cli artifacts list --server ${MENDER_SERVER_URL} --token-value ${MENDER_SERVER_ACCESS_TOKEN} | grep -c ${RELEASE_NAME}) -gt 0 ]; then
+            echo "WARN: artifact ${MENDER_SERVER_URL} with name ${RELEASE_NAME} already exists on the server, upload is skipped"
             exit 0
           fi
           mender-cli artifacts upload --no-progress --server ${MENDER_SERVER_URL} --token-value ${MENDER_SERVER_ACCESS_TOKEN} ${MENDER_ARTIFACT_NAME}
+          echo "INFO: artifact ${MENDER_ARTIFACT_NAME} (${RELEASE_NAME}) successfully uploaded to ${MENDER_SERVER_URL}"
 
 
   deploy:
@@ -117,5 +119,15 @@ jobs:
         env:
           MENDER_SERVER_URL: https://hosted.mender.io
         run: |
-          STATUS_CODE=$(curl -s -w "%{http_code}" -X POST ${MENDER_SERVER_URL}/api/management/v1/deployments/deployments -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}" --data-raw "{\"name\": \"${DEPLOYMENT_NAME}\", \"artifact_name\": \"${ARTIFACT_NAME}\", \"devices\": ${MENDER_DEVICES_LIST}}")
-          [ "${STATUS_CODE}" -eq 201 ] && echo "INFO: Deployment ${DEPLOYMENT_NAME} successfully created" || { echo "ERROR: Failed to create deployment (responce code ${STATUS_CODE})"; exit 1; }
+          STATUS_CODE=$(curl -s -w "%{http_code}" \
+            -X POST ${MENDER_SERVER_URL}/api/management/v1/deployments/deployments \
+            -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
+            -H "Authorization: Bearer ${MENDER_SERVER_ACCESS_TOKEN}" \
+            --data-raw "{\"name\": \"${DEPLOYMENT_NAME}\", \"artifact_name\": \"${ARTIFACT_NAME}\", \"devices\": ${MENDER_DEVICES_LIST}}")
+          if [ "${STATUS_CODE}" -eq 201 ]; then
+            echo "INFO: Deployment ${DEPLOYMENT_NAME} successfully created"
+          else
+            echo "ERROR: Failed to create deployment (responce code ${STATUS_CODE})"
+            exit 1
+          fi
