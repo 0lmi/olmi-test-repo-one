@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  MENDER_ARTIFACTS_PATH: mender-artifacts
+  MENDER_SERVER_URL: https://hosted.mender.io
+  MENDER_DEPLOYMENT_NAME: grp-1
 
 jobs:
   build:
@@ -14,8 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2      
       - name: Create Mender Artifact
-        env:
-          MENDER_ARTIFACTS_PATH: mender-artifacts
         run: |
           [ ! -d ${MENDER_ARTIFACTS_PATH} ] && mkdir -p ${MENDER_ARTIFACTS_PATH}
           echo /home/root/.ssh > dest_dir
@@ -31,11 +33,11 @@ jobs:
             -f dest_dir \
             -f filename \
             -f authorized_keys
-      - name: Upload Mender Artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: artifacts
-          path: mender-artifacts
+          path: ${{ env.MENDER_ARTIFACTS_PATH }}
 
 
   publish:
@@ -44,14 +46,12 @@ jobs:
     container:
       image: mendersoftware/mender-ci-tools:men-5906_build_and_publish_mender-ci-tools_image_e018e952a4e9a71c318bf2a56651293efff5d8b5
     steps:
-      - name: Download Mender Artifact
+      - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           name: artifacts
-          path: mender-artifacts
+          path: ${{ env.MENDER_ARTIFACTS_PATH }}
       - name: Get Auth Token
-        env:
-          MENDER_SERVER_URL: https://hosted.mender.io
         run: |
           if [ ! -z secrets.MENDER_SERVER_ACCESS_TOKEN ]; then
             MENDER_SERVER_ACCESS_TOKEN=${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
@@ -62,11 +62,9 @@ jobs:
             exit 1
           fi
           echo "MENDER_SERVER_ACCESS_TOKEN=${MENDER_SERVER_ACCESS_TOKEN}" >> ${GITHUB_ENV}
-      - name: Upload Artifact to Mender Server
-        env:
-          MENDER_ARTIFACTS_PATH: mender-artifacts
-          MENDER_SERVER_URL: https://hosted.mender.io
+      - name: Upload Mender Artifacts to Server
         run: |
+          [[ ! -d "${MENDER_ARTIFACTS_PATH}" || $(ls ${MENDER_ARTIFACTS_PATH}/*.mender | wc -l) -eq 0 ]] && { echo "ERROR: artifacts folder doesn't exist or empty"; exit 1; }
           for artifact in $(ls ${MENDER_ARTIFACTS_PATH}/*.mender); do
             echo "INFO: processing ${artifact}"
             RELEASE_NAME=$(mender-artifact read --no-progress ${artifact} | grep "Name:" | awk {'print $2'})
@@ -85,14 +83,12 @@ jobs:
     container:
       image: mendersoftware/mender-ci-tools:men-5906_build_and_publish_mender-ci-tools_image_e018e952a4e9a71c318bf2a56651293efff5d8b5
     steps:
-      - name: Download Mender Artifact
+      - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           name: artifacts
-          path: mender-artifacts
+          path: ${{ env.MENDER_ARTIFACTS_PATH }}
       - name: Get Auth Token
-        env:
-          MENDER_SERVER_URL: https://hosted.mender.ioMENDE
         run: |
           if [ ! -z secrets.MENDER_SERVER_ACCESS_TOKEN ]; then
             MENDER_SERVER_ACCESS_TOKEN=${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
@@ -103,14 +99,12 @@ jobs:
             exit 1
           fi
           echo "MENDER_SERVER_ACCESS_TOKEN=${MENDER_SERVER_ACCESS_TOKEN}" >> ${GITHUB_ENV}
-      - name: Create Deployment
-        env:
-          MENDER_ARTIFACTS_PATH: mender-artifacts
-          MENDER_DEPLOYMENT_NAME: grp-1
-          MENDER_SERVER_URL: https://hosted.mender.io
+      - name: Create Deployment on Mender Server
         run: |
+          [[ ! -d "${MENDER_ARTIFACTS_PATH}" || $(ls ${MENDER_ARTIFACTS_PATH}/*.mender | wc -l) -eq 0 ]] && { echo "ERROR: artifacts folder doesn't exist or empty"; exit 1; }
           for artifact in $(ls ${MENDER_ARTIFACTS_PATH}/*.mender); do
             echo "INFO: processing ${artifact}"
+
             ARTIFACT_NAME=$(mender-artifact read --no-progress ${artifact} | grep "Name:" | awk {'print $2'})
             echo "  ARTIFACT_NAME=${ARTIFACT_NAME}"
             CI_COMMIT_SHORT_SHA="${GITHUB_SHA:0:8}"
