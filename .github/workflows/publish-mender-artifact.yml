@@ -1,0 +1,57 @@
+name: Publish Mender Artifacts
+
+
+on:
+  workflow_call:
+    secrets:
+      MENDER_SERVER_ACCESS_TOKEN:
+        required: false
+      MENDER_SERVER_USER:
+        required: false
+      MENDER_SERVER_PASSWORD:
+        required: false
+    inputs:
+      MENDER_SERVER_URL:
+        required: true
+        type: string
+      MENDER_ARTIFACTS_CI_ARTIFACT_PATH:
+        required: true
+        type: string
+      MENDER_ARTIFACTS_CI_ARTIFACT_NAME:
+        required: true
+        type: string
+
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    container:
+      image: mendersoftware/mender-ci-tools:men-5906_build_and_publish_mender-ci-tools_image_e018e952a4e9a71c318bf2a56651293efff5d8b5
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.MENDER_ARTIFACTS_CI_ARTIFACT_NAME }}
+          path: ${{ inputs.MENDER_ARTIFACTS_CI_ARTIFACT_PATH }}
+      - name: Get Auth Token
+        run: |
+          if [ ! -z secrets.MENDER_SERVER_ACCESS_TOKEN ]; then
+            MENDER_SERVER_ACCESS_TOKEN=${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
+          elif [[ ! -z ${{ secrets.MENDER_SERVER_USER }} && ! -z ${{ secrets.MENDER_SERVER_PASSWORD }} ]]; then
+            MENDER_SERVER_ACCESS_TOKEN=$(curl -s -X POST -u ${{ secrets.MENDER_SERVER_USER }}:${{ secrets.MENDER_SERVER_PASSWORD }} ${{ inputs.MENDER_SERVER_URL }}/api/management/v1/useradm/auth/login)
+          else
+            echo "ERROR: Auth credentials are not provided"
+            exit 1
+          fi
+          echo "MENDER_SERVER_ACCESS_TOKEN=${MENDER_SERVER_ACCESS_TOKEN}" >> ${GITHUB_ENV}
+      - name: Upload Mender Artifacts to Server
+        run: |
+          [[ ! -d "${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}" || $(ls ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}/*.mender | wc -l) -eq 0 ]] && { echo "ERROR: artifacts folder doesn't exist or empty"; exit 1; }
+          ARTIFACT=$(ls ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}/*.mender)
+          RELEASE_NAME=$(mender-artifact read --no-progress ${ARTIFACT} | grep "Name:" | awk {'print $2'})
+          if [ $(mender-cli artifacts list --server ${{ inputs.MENDER_SERVER_URL }} --token-value ${MENDER_SERVER_ACCESS_TOKEN} | grep -c ${RELEASE_NAME}) -gt 0 ]; then
+            echo "WARN: artifact ${{ inputs.MENDER_SERVER_URL }} with name ${RELEASE_NAME} already exists on the server, upload is skipped"
+            exit 0
+          fi
+          mender-cli artifacts upload --no-progress --server ${{ inputs.MENDER_SERVER_URL }} --token-value ${MENDER_SERVER_ACCESS_TOKEN} ${ARTIFACT}
+          echo "INFO: artifact ${artifact} (${RELEASE_NAME}) successfully uploaded to ${{ inputs.MENDER_SERVER_URL }}"
