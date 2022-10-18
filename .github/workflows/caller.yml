@@ -1,0 +1,15 @@
+name: Call a reusable workflow
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  call-workflow:
+    uses: 0lmi/olmi-test-repo-one/.github/workflows/mender-artifact.yml@main
+    with:
+      MENDER_SERVER_URL: https://hosted.mender.io
+      MENDER_DEPLOYMENT_NAME: grp-1
+      MENDER_ARTIFACTS_PATH: mender-artifacts
+    secrets:
+      MENDER_SERVER_ACCESS_TOKEN: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}

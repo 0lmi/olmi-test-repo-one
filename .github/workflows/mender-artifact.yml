@@ -1,14 +1,22 @@
 name: Build and Deploy Mender Artifacts
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+  workflow_call:
+    secrets:
+      MENDER_SERVER_ACCESS_TOKEN:
+        required: false
+      MENDER_SERVER_USER:
+        required: false
+      MENDER_SERVER_PASSWORD:
+        required: false
+    inputs:
+      MENDER_SERVER_URL:
+        required: true
+      MENDER_DEPLOYMENT_NAME:
+        required: true
+      MENDER_ARTIFACTS_PATH:
+        required: true
 
-env:
-  MENDER_ARTIFACTS_PATH: mender-artifacts
-  MENDER_SERVER_URL: https://hosted.mender.io
-  MENDER_DEPLOYMENT_NAME: grp-1
 
 jobs:
   build:
@@ -56,7 +64,7 @@ jobs:
           if [ ! -z secrets.MENDER_SERVER_ACCESS_TOKEN ]; then
             MENDER_SERVER_ACCESS_TOKEN=${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
           elif [[ ! -z ${{ secrets.MENDER_SERVER_USER }} && ! -z ${{ secrets.MENDER_SERVER_PASSWORD }} ]]; then
-            MENDER_SERVER_ACCESS_TOKEN=$(curl -s -X POST -u ${{ secrets.MENDER_SERVER_USER }}:${{ secrets.MENDER_SERVER_PASSWORD }} ${MENDER_SERVER_URL}/api/management/v1/useradm/auth/login)
+            MENDER_SERVER_ACCESS_TOKEN=$(curl -s -X POST -u ${{ secrets.MENDER_SERVER_USER }}:${{ secrets.MENDER_SERVER_PASSWORD }} ${{ inputs.MENDER_SERVER_URL }}/api/management/v1/useradm/auth/login)
           else
             echo "ERROR: Auth credentials are not provided"
             exit 1
@@ -68,12 +76,12 @@ jobs:
           for artifact in $(ls ${MENDER_ARTIFACTS_PATH}/*.mender); do
             echo "INFO: processing ${artifact}"
             RELEASE_NAME=$(mender-artifact read --no-progress ${artifact} | grep "Name:" | awk {'print $2'})
-            if [ $(mender-cli artifacts list --server ${MENDER_SERVER_URL} --token-value ${MENDER_SERVER_ACCESS_TOKEN} | grep -c ${RELEASE_NAME}) -gt 0 ]; then
-              echo "WARN: artifact ${MENDER_SERVER_URL} with name ${RELEASE_NAME} already exists on the server, upload is skipped"
+            if [ $(mender-cli artifacts list --server ${{ inputs.MENDER_SERVER_URL }} --token-value ${MENDER_SERVER_ACCESS_TOKEN} | grep -c ${RELEASE_NAME}) -gt 0 ]; then
+              echo "WARN: artifact ${{ inputs.MENDER_SERVER_URL }} with name ${RELEASE_NAME} already exists on the server, upload is skipped"
               continue
             fi
-            mender-cli artifacts upload --no-progress --server ${MENDER_SERVER_URL} --token-value ${MENDER_SERVER_ACCESS_TOKEN} ${artifact}
-            echo "INFO: artifact ${artifact} (${RELEASE_NAME}) successfully uploaded to ${MENDER_SERVER_URL}"
+            mender-cli artifacts upload --no-progress --server ${{ inputs.MENDER_SERVER_URL }} --token-value ${MENDER_SERVER_ACCESS_TOKEN} ${artifact}
+            echo "INFO: artifact ${artifact} (${RELEASE_NAME}) successfully uploaded to ${{ inputs.MENDER_SERVER_URL }}"
           done
 
 
@@ -93,7 +101,7 @@ jobs:
           if [ ! -z secrets.MENDER_SERVER_ACCESS_TOKEN ]; then
             MENDER_SERVER_ACCESS_TOKEN=${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
           elif [[ ! -z ${{ secrets.MENDER_SERVER_USER }} && ! -z ${{ secrets.MENDER_SERVER_PASSWORD }} ]]; then
-            MENDER_SERVER_ACCESS_TOKEN=$(curl -s -X POST -u ${{ secrets.MENDER_SERVER_USER }}:${{ secrets.MENDER_SERVER_PASSWORD }} ${MENDER_SERVER_URL}/api/management/v1/useradm/auth/login)
+            MENDER_SERVER_ACCESS_TOKEN=$(curl -s -X POST -u ${{ secrets.MENDER_SERVER_USER }}:${{ secrets.MENDER_SERVER_PASSWORD }} ${{ inputs.MENDER_SERVER_URL }}/api/management/v1/useradm/auth/login)
           else
             echo "ERROR: Auth credentials are not provided"
             exit 1
@@ -110,11 +118,11 @@ jobs:
             CI_COMMIT_SHORT_SHA="${GITHUB_SHA:0:8}"
             DEPLOYMENT_NAME=${ARTIFACT_NAME}_${CI_COMMIT_SHORT_SHA}
             echo "  DEPLOYMENT_NAME=${DEPLOYMENT_NAME}"
-            MENDER_DEVICES_LIST=$(curl -s -H "Authorization: Bearer ${MENDER_SERVER_ACCESS_TOKEN}" ${MENDER_SERVER_URL}/api/management/v1/inventory/groups/${MENDER_DEPLOYMENT_NAME}/devices)
+            MENDER_DEVICES_LIST=$(curl -s -H "Authorization: Bearer ${MENDER_SERVER_ACCESS_TOKEN}" ${{ inputs.MENDER_SERVER_URL }}/api/management/v1/inventory/groups/${MENDER_DEPLOYMENT_NAME}/devices)
             echo "  MENDER_DEVICES_LIST=${MENDER_DEVICES_LIST}"
 
             STATUS_CODE=$(curl -s -w "%{http_code}" \
-              -X POST ${MENDER_SERVER_URL}/api/management/v1/deployments/deployments \
+              -X POST ${{ inputs.MENDER_SERVER_URL }}/api/management/v1/deployments/deployments \
               -H "Content-Type: application/json" \
               -H "Accept: application/json" \
               -H "Authorization: Bearer ${MENDER_SERVER_ACCESS_TOKEN}" \
