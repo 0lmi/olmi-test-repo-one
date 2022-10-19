@@ -97,7 +97,7 @@ jobs:
             done
           done
       - name: Create Deployment on Mender Server
-        uses: 0lmi/mender-create-deployment@basic_action_implementation
+        uses: 0lmi/mender-create-deployment/github/mender-create-deployment@basic_action_implementation
         with:
           mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
           mender_uri: ${{ env.MENDER_SERVER_URL }}
