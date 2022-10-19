@@ -22,20 +22,26 @@ jobs:
       - uses: actions/checkout@v2
       - name: Generrate Mender Release Name
         run: |
+          [ ! -d ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH} ] && mkdir -p ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}
           APP_NAME=change-the-world-to-better
           VERSION="$(($RANDOM%9+1)).$(($RANDOM%9+1)).$(($RANDOM%9+1))"
           MENDER_RELEASE_NAME=${APP_NAME}_v${VERSION}
-          
-          [ ! -d ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH} ] && mkdir -p ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}
           echo "MENDER_RELEASE_NAME=${MENDER_RELEASE_NAME}" | tee ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}/MENDER_RELEASE_NAME.env ${GITHUB_ENV}
       - name: Choose Mender Deployment Group
         run: |
-          MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP_DEV}
-          env
+          if [[ "${GITHUB_REF_NAME}" == "prod" ]]; then
+            MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP_PROD}
+          elif [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+            MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP_DEV}
+          else
+            echo "ERROR: workflow execution on not supported branch"
+            exit 1
+          fi
           echo "MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP}" > ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}/MENDER_DEPLOYMENT_DEVICES_GROUP.env
       - name: Generate Mender Deployment Name
         run: |
-          MENDER_DEPLOYMENT_NAME=branch_sha
+          COMMIT_SHORT_SHA="${GITHUB_SHA:0:8}"
+          MENDER_DEPLOYMENT_NAME=${MENDER_RELEASE_NAME}_${COMMIT_SHORT_SHA}
           echo "MENDER_DEPLOYMENT_NAME=${MENDER_DEPLOYMENT_NAME}" > ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}/MENDER_DEPLOYMENT_NAME.env
       - name: Create Mender Artifact
         run: |
