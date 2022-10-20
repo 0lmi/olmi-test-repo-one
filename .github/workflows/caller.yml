@@ -1,8 +1,9 @@
-name: Call a reusable workflow
+name: Build Mender Artifact and Trigger Deployment
+
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, production ]
 
 
 env:
@@ -12,6 +13,7 @@ env:
   MENDER_SERVER_URL: https://hosted.mender.io
   MENDER_DEPLOYMENT_DEVICES_GROUP_DEV: grp-1
   MENDER_DEPLOYMENT_DEVICES_GROUP_PROD: grp-2
+
 
 jobs:
   build:
@@ -29,7 +31,7 @@ jobs:
           echo "MENDER_RELEASE_NAME=${MENDER_RELEASE_NAME}" | tee ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}/MENDER_RELEASE_NAME.env ${GITHUB_ENV}
       - name: Choose Mender Deployment Group
         run: |
-          if [[ "${GITHUB_REF_NAME}" == "prod" ]]; then
+          if [[ "${GITHUB_REF_NAME}" == "production" ]]; then
             MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP_PROD}
           elif [[ "${GITHUB_REF_NAME}" == "main" ]]; then
             MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP_DEV}
@@ -97,7 +99,7 @@ jobs:
             done
           done
       - name: Create Deployment on Mender Server
-        uses: 0lmi/mender-create-deployment/github/mender-create-deployment@basic_action_implementation
+        uses: 0lmi/mender-create-deployment@basic_action_implementation
         with:
           mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
           mender_uri: ${{ env.MENDER_SERVER_URL }}
