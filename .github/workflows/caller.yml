@@ -1,17 +1,15 @@
 name: Build Mender Artifact and Trigger Deployment
 
-
 on:
   push:
     branches: [ main, production ]
 
-
 env:
   MENDER_ARTIFACTS_CI_ARTIFACT_NAME: mender-artifacts
   MENDER_ARTIFACTS_CI_ARTIFACT_PATH: mender-artifacts
-  MENDER_SERVER_URL: https://hosted.mender.io
   MENDER_DEPLOYMENT_DEVICES_GROUP_DEV: grp-1
   MENDER_DEPLOYMENT_DEVICES_GROUP_PROD: grp-2
+  MENDER_SERVER_URL: https://hosted.mender.io
 
 jobs:
   build:
@@ -33,7 +31,7 @@ jobs:
           VERSION="$(($RANDOM%9+1)).$(($RANDOM%9+1)).$(($RANDOM%9+1))"
           MENDER_RELEASE_NAME=${APP_NAME}_v${VERSION}
           echo "MENDER_RELEASE_NAME=${MENDER_RELEASE_NAME}" >> ${GITHUB_ENV}
-          echo "mender_release_name=${MENDER_RELEASE_NAME}" >> $GITHUB_OUTPUT
+          echo "mender_release_name=${MENDER_RELEASE_NAME}" >> ${GITHUB_OUTPUT}
       - name: Choose Mender Deployment Group
         id: deployment_group
         run: |
@@ -55,7 +53,7 @@ jobs:
       - name: Create Mender Artifact
         id: create_artifact
         run: |
-          MENDER_ARTIFACT_NAME=artifact.mender
+          MENDER_ARTIFACT_NAME=artifact_$(( $RANDOM % 9999 + 1000 )).mender
           echo /home/root/.ssh > dest_dir
           echo authorized_keys > filename
           echo key > authorized_keys
@@ -69,7 +67,6 @@ jobs:
             -f dest_dir \
             -f filename \
             -f authorized_keys
-          echo "mender_artifact_name=${MENDER_ARTIFACT_NAME}"
           echo "mender_artifact_name=${MENDER_ARTIFACT_NAME}" >> ${GITHUB_OUTPUT}
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
@@ -79,6 +76,7 @@ jobs:
 
   publish:
     needs: build
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
@@ -90,13 +88,12 @@ jobs:
         uses: 0lmi/mender-push-artifact@main
         with:
           mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
-          mender_artifact: "${{ env.MENDER_ARTIFACTS_CI_ARTIFACT_PATH }}/${{ needs.build.outputs.mender_artifact_name }}"
+          mender_artifact: ${{ env.MENDER_ARTIFACTS_CI_ARTIFACT_PATH }}/${{ needs.build.outputs.mender_artifact_name }}
           mender_uri: ${{ env.MENDER_SERVER_URL }}
 
   deploy:
-    needs:
-      - build
-      - publish
+    needs: ["build", "publish"]
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Create Deployment on Mender Server
@@ -107,3 +104,4 @@ jobs:
           mender_deployment_name: ${{ needs.build.outputs.mender_deployment_name }}
           mender_release_name: ${{ needs.build.outputs.mender_release_name }}
           mender_devices_group: ${{ needs.build.outputs.mender_devices_group }}
+
