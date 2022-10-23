@@ -20,16 +20,22 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mendersoftware/mender-ci-tools:men-5906_build_and_publish_mender-ci-tools_image_e018e952a4e9a71c318bf2a56651293efff5d8b5
+    outputs:
+      mender_release_name: ${{ steps.release_name.mender_release_name }}
+      mender_devices_group: ${{ steps.deployment_group.mender_devices_group }}
+      mender_deployment_name: ${{ steps.deployment_name.mender_deployment_name }}
     steps:
       - uses: actions/checkout@v2
       - name: Generrate Mender Release Name
+        id: release_name
         run: |
           [ ! -d ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH} ] && mkdir -p ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}
           APP_NAME=change-the-world-to-better
           VERSION="$(($RANDOM%9+1)).$(($RANDOM%9+1)).$(($RANDOM%9+1))"
           MENDER_RELEASE_NAME=${APP_NAME}_v${VERSION}
-          echo "MENDER_RELEASE_NAME=${MENDER_RELEASE_NAME}" | tee ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}/MENDER_RELEASE_NAME.env ${GITHUB_ENV}
+          echo "mender_release_name=${MENDER_RELEASE_NAME}" >> ${GITHUB_OUTPUT}
       - name: Choose Mender Deployment Group
+        id: deployment_group
         run: |
           if [[ "${GITHUB_REF_NAME}" == "production" ]]; then
             MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP_PROD}
@@ -39,12 +45,13 @@ jobs:
             echo "ERROR: workflow execution on not supported branch"
             exit 1
           fi
-          echo "MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP}" > ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}/MENDER_DEPLOYMENT_DEVICES_GROUP.env
+          echo "mender_devices_group=${MENDER_DEPLOYMENT_DEVICES_GROUP}" >> ${GITHUB_OUTPUT}
       - name: Generate Mender Deployment Name
+        id: deployment_name
         run: |
           COMMIT_SHORT_SHA="${GITHUB_SHA:0:8}"
           MENDER_DEPLOYMENT_NAME=${MENDER_RELEASE_NAME}_${COMMIT_SHORT_SHA}
-          echo "MENDER_DEPLOYMENT_NAME=${MENDER_DEPLOYMENT_NAME}" > ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}/MENDER_DEPLOYMENT_NAME.env
+          echo "mender_deployment_name=${MENDER_DEPLOYMENT_NAME}" >> ${GITHUB_OUTPUT}
       - name: Create Mender Artifact
         run: |
           echo /home/root/.ssh > dest_dir
@@ -83,7 +90,7 @@ jobs:
           mender_uri: ${{ env.MENDER_SERVER_URL }}
 
   deploy:
-    needs: ["publish"]
+    needs: ["build", "publish"]
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
@@ -91,18 +98,11 @@ jobs:
         with:
           name: ${{ env.MENDER_ARTIFACTS_CI_ARTIFACT_NAME }}
           path: ${{ env.MENDER_ARTIFACTS_CI_ARTIFACT_PATH }}
-      - name: Set Environment Variables
-        run: |
-          for file in $(ls ${MENDER_ARTIFACTS_CI_ARTIFACT_PATH}/*.env); do
-            for var in $(cat ${file}); do
-              echo ${var} >> ${GITHUB_ENV}
-            done
-          done
       - name: Create Deployment on Mender Server
         uses: 0lmi/mender-create-deployment@basic_action_implementation
         with:
           mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
           mender_uri: ${{ env.MENDER_SERVER_URL }}
-          mender_deployment_name: ${{ env.MENDER_DEPLOYMENT_NAME }}
-          mender_release_name: ${{ env.MENDER_RELEASE_NAME }}
-          mender_devices_group: ${{ env.MENDER_DEPLOYMENT_DEVICES_GROUP }}
+          mender_deployment_name: ${{ needs.build.outputs.mender_deployment_name }}
+          mender_release_name: ${{ needs.build.outputs.mender_release_name }}
+          mender_devices_group: ${{ needs.build.outputs.mender_devices_group }}
