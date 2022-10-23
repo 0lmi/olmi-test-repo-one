@@ -1,9 +1,12 @@
 name: Build Mender Artifact and Trigger Deployment
 
 on:
-  push:
-    branches: [ main, production ]
   pull_request:
+    branches:
+      - main
+      - production
+    types:
+      - closed
 
 env:
   MENDER_ARTIFACTS_CI_ARTIFACT_NAME: mender-artifacts
@@ -35,7 +38,6 @@ jobs:
           echo "mender_release_name=${MENDER_RELEASE_NAME}" >> ${GITHUB_OUTPUT}
       - name: Choose Mender Deployment Group
         id: deployment_group
-        if: ${{ github.event.pull_request.merged }}
         run: |
           if [[ "${GITHUB_BASE_REF}" == "production" ]]; then
             MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP_PROD}
@@ -78,7 +80,6 @@ jobs:
 
   publish:
     needs: build
-    if: ${{ github.event.pull_request.merged }}
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
@@ -95,7 +96,6 @@ jobs:
 
   deploy:
     needs: ["build", "publish"]
-    if: ${{ github.event.pull_request.merged }}
     runs-on: ubuntu-latest
     steps:
       - name: Create Deployment on Mender Server
