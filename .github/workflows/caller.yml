@@ -9,11 +9,9 @@ on:
 env:
   MENDER_ARTIFACTS_CI_ARTIFACT_NAME: mender-artifacts
   MENDER_ARTIFACTS_CI_ARTIFACT_PATH: mender-artifacts
-  MENDER_ARTIFACT_NAME: artifact.mender
   MENDER_SERVER_URL: https://hosted.mender.io
   MENDER_DEPLOYMENT_DEVICES_GROUP_DEV: grp-1
   MENDER_DEPLOYMENT_DEVICES_GROUP_PROD: grp-2
-
 
 jobs:
   build:
@@ -21,9 +19,10 @@ jobs:
     container:
       image: mendersoftware/mender-ci-tools:men-5906_build_and_publish_mender-ci-tools_image_e018e952a4e9a71c318bf2a56651293efff5d8b5
     outputs:
-      mender_release_name: ${{ steps.release_name.mender_release_name }}
-      mender_devices_group: ${{ steps.deployment_group.mender_devices_group }}
-      mender_deployment_name: ${{ steps.deployment_name.mender_deployment_name }}
+      mender_release_name: ${{ steps.release_name.outputs.mender_release_name }}
+      mender_devices_group: ${{ steps.deployment_group.outputs.mender_devices_group }}
+      mender_deployment_name: ${{ steps.deployment_name.outputs.mender_deployment_name }}
+      mender_artifact_name: ${{ steps.create_artifact.outputs.mender_artifact_name }}
     steps:
       - uses: actions/checkout@v2
       - name: Generrate Mender Release Name
@@ -33,7 +32,8 @@ jobs:
           APP_NAME=change-the-world-to-better
           VERSION="$(($RANDOM%9+1)).$(($RANDOM%9+1)).$(($RANDOM%9+1))"
           MENDER_RELEASE_NAME=${APP_NAME}_v${VERSION}
-          echo "mender_release_name=${MENDER_RELEASE_NAME}" >> ${GITHUB_OUTPUT}
+          echo "MENDER_RELEASE_NAME=${MENDER_RELEASE_NAME}" >> ${GITHUB_ENV}
+          echo "mender_release_name=${MENDER_RELEASE_NAME}" >> $GITHUB_OUTPUT
       - name: Choose Mender Deployment Group
         id: deployment_group
         run: |
@@ -53,7 +53,9 @@ jobs:
           MENDER_DEPLOYMENT_NAME=${MENDER_RELEASE_NAME}_${COMMIT_SHORT_SHA}
           echo "mender_deployment_name=${MENDER_DEPLOYMENT_NAME}" >> ${GITHUB_OUTPUT}
       - name: Create Mender Artifact
+        id: create_artifact
         run: |
+          MENDER_ARTIFACT_NAME=artifact.mender
           echo /home/root/.ssh > dest_dir
           echo authorized_keys > filename
           echo key > authorized_keys
@@ -67,6 +69,8 @@ jobs:
             -f dest_dir \
             -f filename \
             -f authorized_keys
+          echo "mender_artifact_name=${MENDER_ARTIFACT_NAME}"
+          echo "mender_artifact_name=${MENDER_ARTIFACT_NAME}" >> ${GITHUB_OUTPUT}
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -74,7 +78,7 @@ jobs:
           path: ${{ env.MENDER_ARTIFACTS_CI_ARTIFACT_PATH }}
 
   publish:
-    needs: ["build"]
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
@@ -86,18 +90,15 @@ jobs:
         uses: 0lmi/mender-push-artifact@main
         with:
           mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
-          mender_artifact: ${{ env.MENDER_ARTIFACTS_CI_ARTIFACT_PATH }}/${{ env.MENDER_ARTIFACT_NAME }}
+          mender_artifact: "${{ env.MENDER_ARTIFACTS_CI_ARTIFACT_PATH }}/${{ needs.build.outputs.mender_artifact_name }}"
           mender_uri: ${{ env.MENDER_SERVER_URL }}
 
   deploy:
-    needs: ["build", "publish"]
+    needs:
+      - build
+      - publish
     runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: ${{ env.MENDER_ARTIFACTS_CI_ARTIFACT_NAME }}
-          path: ${{ env.MENDER_ARTIFACTS_CI_ARTIFACT_PATH }}
       - name: Create Deployment on Mender Server
         uses: 0lmi/mender-create-deployment@basic_action_implementation
         with:
