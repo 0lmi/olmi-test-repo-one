@@ -3,6 +3,7 @@ name: Build Mender Artifact and Trigger Deployment
 on:
   push:
     branches: [ main, production ]
+  pull_request:
 
 env:
   MENDER_ARTIFACTS_CI_ARTIFACT_NAME: mender-artifacts
@@ -34,10 +35,11 @@ jobs:
           echo "mender_release_name=${MENDER_RELEASE_NAME}" >> ${GITHUB_OUTPUT}
       - name: Choose Mender Deployment Group
         id: deployment_group
+        if: github.event.pull_request.merged == true
         run: |
-          if [[ "${GITHUB_REF_NAME}" == "production" ]]; then
+          if [[ "${GITHUB_BASE_REF}" == "production" ]]; then
             MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP_PROD}
-          elif [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+          elif [[ "${GITHUB_BASE_REF}" == "main" ]]; then
             MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP_DEV}
           else
             echo "ERROR: workflow execution on not supported branch"
