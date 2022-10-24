@@ -3,7 +3,6 @@ name: Build Mender Artifact and Trigger Deployment
 on:
   pull_request:
     branches:
-      - main
       - production
     types:
       - closed

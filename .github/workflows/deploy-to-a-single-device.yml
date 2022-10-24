@@ -3,7 +3,7 @@ name: Build and Deploy to a Single Device
 on:
   push:
     branches:
-      - main
+      - production
 
 env:
   MENDER_ARTIFACTS_CI_ARTIFACT_PATH: mender-artifast
