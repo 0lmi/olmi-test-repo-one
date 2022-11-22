@@ -56,8 +56,8 @@ jobs:
             sleep 2
           done
           # accept a device
-          for id in $(jq -r '.[].id' /tmp/devauth_current.json); do
-            if ! grep -q ${id} /tmp/devauth.json; then
+          for id in $(jq -r '.[].id' ${CURRENT_DEVICES}); do
+            if ! grep -q ${id} ${BEFORE_DEVICES}; then
               auth_set_id=$(curl -s -X GET ${MENDER_SERVER_URL}/api/management/v2/devauth/devices/${id} \
                 -H "Accept: application/json" \
                 -H "Authorization: Bearer ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}" | jq -r '.auth_sets[].id')
