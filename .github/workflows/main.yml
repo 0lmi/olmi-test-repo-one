@@ -26,7 +26,7 @@ jobs:
       # Download Mender bash client
       - name: Setup Mender bash client
         run: |
-          curl -O https://raw.githubusercontent.com/mendersoftware/bash-mender-client/master/mender-client.sh
+          curl -O https://raw.githubusercontent.com/mirzak/bash-mender-client/d5a4ded71404f8526362f5b94e7f79065cfced09/mender-client.sh
           chmod +x mender-client.sh
           apk add openssl jq
           mkdir keys
