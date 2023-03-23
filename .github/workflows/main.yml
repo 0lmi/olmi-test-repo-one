@@ -13,4 +13,14 @@ jobs:
     name: Upload a dummy Mender artifact
     steps:
       - name: Env
-        run: env
+        env:
+          MY_HOME_ONE: $HOME
+          MY_HOME_TWO: ${HOME}
+          MY_HOME_FOUR: ${{ env.HOME }}
+          MY_HOME_FIVE: ${{ vars.HOME }}
+        run: |
+          echo "HOME=$HOME"
+          echo "MY_HOME_ONE=$MY_HOME_ONE"
+          echo "MY_HOME_TWO=$MY_HOME_TWO"
+          echo "MY_HOME_FOUR=$MY_HOME_FOUR"
+          echo "MY_HOME_FIVE=$MY_HOME_FIVE"
