@@ -1,0 +1,9 @@
+version: 2
+updates:
+  - commit-message:
+      prefix: "chore"
+    directory: /
+    package-ecosystem: pip
+    schedule:
+      interval: daily
+      time: 13:45
