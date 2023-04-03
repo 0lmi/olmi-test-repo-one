@@ -48,8 +48,10 @@ jobs:
       # name "change-the-world-to-better" with a random version.
       - name: Generate Mender release name
         id: release_name
+        shell: bash
         run: |
           APP_NAME=change-the-world-to-better
+          echo $(($RANDOM%9+1)).$(($RANDOM%9+1)).$(($RANDOM%9+1))
           VERSION="$(($RANDOM%9+1)).$(($RANDOM%9+1)).$(($RANDOM%9+1))"
           MENDER_RELEASE_NAME=${APP_NAME}_v${VERSION}
           echo "MENDER_RELEASE_NAME=${MENDER_RELEASE_NAME}" >> ${GITHUB_ENV}
