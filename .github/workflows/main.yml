@@ -63,11 +63,15 @@ jobs:
         id: deployment_group
         shell: bash
         run: |
+          echo GITHUB_BASE_REF=$GITHUB_BASE_REF
           if [[ "${GITHUB_BASE_REF}" == "production" ]]; then
             MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP_PROD}
           elif [[ "${GITHUB_BASE_REF}" == "main" ]]; then
             MENDER_DEPLOYMENT_DEVICES_GROUP=${MENDER_DEPLOYMENT_DEVICES_GROUP_DEV}
           else
+            echo ---
+            env
+            echo ---
             echo "ERROR: workflow execution on not supported branch"
             exit 1
           fi
