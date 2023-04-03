@@ -7,5 +7,5 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "14:50"
+      time: "15:00"
       timezone: "Europe/Berlin"
