@@ -1,0 +1,4 @@
+VERSION=1.0.0
+
+curl -O https://github.com/0lmi/olmi-test-repo-two/archive/refs/tags/${VERSION}.tar.gz
+

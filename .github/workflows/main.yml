@@ -1,11 +1,4 @@
-#
-# The example shows how to build, upload and deploy Mender Artifacts for two different
-# device types in paralel.
-#
-# 'MENDER_SERVER_ACCESS_TOKEN' secret is required to be set in GitHub repo settings.
-#
-
-name: Build and Deploy Two Mender Artifacts
+name: Test Releases
 
 on:
   push:
@@ -13,77 +6,22 @@ on:
       - main
 
 env:
-  MENDER_SERVER_URL: https://hosted.mender.io       # Mender server URL
-  MENDER_DEPLOYMENT_DEVICES_GROUP_PREFIX: group # Mender deployment name prefix
+  VERSION: 1.0.0
 
 jobs:
-  #
-  # Build two Mender artifacts and deploy them to related groups
-  #
   build-and-deploy:
     runs-on: ubuntu-latest
-    # run multiply jobs for different device types
-    strategy:
-      matrix:
-        device: ["dev", "prod"]
-    # conrainer with pre-installed mender-artifact and mender-cli tools
-    container:
-      image: mendersoftware/mender-ci-tools:1.0.0
     steps:
-      # Checkout git repository
       - uses: actions/checkout@v3
-      # Generates the required variables to later create the Mender Artifact, using a dummy application
-      # name "change-the-world-to-better" with a random version.
-      - name: Generrate Mender release name
-        shell: bash
-        run: |
-          APP_NAME=change-the-world-to-better
-          VERSION="$(($RANDOM%9+1)).$(($RANDOM%9+1)).$(($RANDOM%9+1))"
-          MENDER_RELEASE_NAME=${APP_NAME}_v${VERSION}
-          echo "MENDER_RELEASE_NAME=${MENDER_RELEASE_NAME}" >> ${GITHUB_ENV}
-      # Generates Mender deployment name to later create the Mender deployment
-      - name: Generate Mender deployment name
-        shell: bash
-        run: |
-          COMMIT_SHORT_SHA="${GITHUB_SHA:0:8}"
-          MENDER_DEPLOYMENT_NAME=${{ matrix.device }}_${MENDER_RELEASE_NAME}_${COMMIT_SHORT_SHA}
-          echo "MENDER_DEPLOYMENT_NAME=${MENDER_DEPLOYMENT_NAME}" >> ${GITHUB_ENV}
-      # Creates Mender Artifact, using randomly generated dummy name
-      # In this example, hello-mender.py represents a single file Python application that we have
-      # built and test in our CI and now we want to deploy into a device running Mender. We will
-      # package it as a Single File Application Update. For more information visit Mender docs:
-      # https://docs.mender.io/artifact-creation/create-an-artifact
-      - name: Create Mender Artifact
-        shell: bash
-        run: |
-          curl -O https://raw.githubusercontent.com/mendersoftware/mender-ci-workflows/master/examples/hello-mender.py
-          chmod 755 hello-mender.py
-          MENDER_ARTIFACT_NAME=artifact_$(( $RANDOM % 9999 + 1000 )).mender
-          SOFTWARE_NAME=${{ matrix.device }}
-          SOFTWARE_VERSION="$(($RANDOM%9+1)).$(($RANDOM%9+1))"
-          single-file-artifact-gen \
-            --device-type raspberrypi4 \
-            -o ${MENDER_ARTIFACT_NAME} \
-            -n ${MENDER_RELEASE_NAME} \
-            --software-name ${SOFTWARE_NAME} \
-            --software-version ${SOFTWARE_VERSION} \
-            --dest-dir /usr/local/bin \
-            hello-mender.py
-          echo "MENDER_ARTIFACT_NAME=${MENDER_ARTIFACT_NAME}" >> ${GITHUB_ENV}
-      # Uploads Mender Artifact to a Mender server, using previously generated Mender Artifact name
-      - name: Upload Mender Artifacts to Mender server
-        uses: mendersoftware/mender-gh-action-upload-artifact@v1.0.0
-        with:
-          mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
-          mender_artifact: ${{ env.MENDER_ARTIFACT_NAME }}
-          mender_uri: ${{ env.MENDER_SERVER_URL }}
-      # Creates a deployment on a Mender server, using previously generated Mender deployment and release names
-      - name: Create deployment on Mender server
-        uses: mendersoftware/mender-gh-action-create-deployment@v1.0.0
-        with:
-          mender_pat: ${{ secrets.MENDER_SERVER_ACCESS_TOKEN }}
-          mender_uri: ${{ env.MENDER_SERVER_URL }}
-          mender_deployment_name: ${{ env.MENDER_DEPLOYMENT_NAME }}
-          mender_release_name: ${{ env.MENDER_RELEASE_NAME }}
-          mender_devices_group: ${{ env.MENDER_DEPLOYMENT_DEVICES_GROUP_PREFIX }}-${{ matrix.device }}
 
+      - name: Download latest version
+        shell: bash
+        run: cat packaging/cfengine-nova-hub/cfengine-nova-hub.spec.in | bash
+
+      - name: Unarchive
+        shell: bash
+        run: find . -name ${VERSION}.tar.gz
+
+      - name: List files
+        shell: bash
+        run: ls -la
