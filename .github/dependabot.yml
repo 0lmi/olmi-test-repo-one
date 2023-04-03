@@ -5,6 +5,7 @@ updates:
     directory: /
     package-ecosystem: pip
     schedule:
-      interval: weekly
-      day: monday
-      time: 13:50
+      interval: "weekly"
+      day: "monday"
+      time: "14:50"
+      timezone: "Europe/Berlin"
