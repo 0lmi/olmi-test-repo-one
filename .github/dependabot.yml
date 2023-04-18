@@ -1,11 +1,11 @@
 version: 2
 updates:
-  - package-ecosystem: pip
+  - package-ecosystem: gitsubmodule
     commit-message:
       prefix: "chore"
-    directory: /packaging/cfengine-nova-hub/
+    directory: /repo-two
     schedule:
       interval: "weekly"
-      day: "monday"
-      time: "15:45"
+      day: "tuesday"
+      time: "15:12"
       timezone: "Europe/Berlin"
