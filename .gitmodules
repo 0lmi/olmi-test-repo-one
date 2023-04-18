@@ -1,0 +1,4 @@
+[submodule "repo-two"]
+	path = repo-two
+	url = git@github.com:0lmi/olmi-test-repo-two.git
+	branch = main
