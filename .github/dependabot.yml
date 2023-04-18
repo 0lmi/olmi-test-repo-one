@@ -3,9 +3,9 @@ updates:
   - package-ecosystem: gitsubmodule
     commit-message:
       prefix: "chore"
-    directory: /repo-two
+    directory: /
     schedule:
       interval: "weekly"
       day: "tuesday"
-      time: "15:12"
+      time: "15:14"
       timezone: "Europe/Berlin"
